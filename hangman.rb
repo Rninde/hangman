@@ -8,7 +8,7 @@ class Hangman
 		@win_condition = false
 	end
 	def select
-		@secret = @dictionary.sample.split("")
+		@secret = @dictionary.sample.downcase.split("")
 
 	end
 
@@ -19,7 +19,7 @@ class Hangman
 	end
 
 	def show
-		puts "#{@board.join(" ")}    missed: #{@missed.join(" ")} misses left: #{@chances}"
+		puts "#{@board.join(" ")}   missed: #{@missed.join(" ")} misses left: #{@chances}"
 	end
 
 	def check
@@ -29,45 +29,54 @@ class Hangman
 			@missed << @guess
 			@chances -= 1
 		end
-		win?
-	end
-
-	def win?
 		@win_condition = true if @board == @secret
 	end
 
+	def save
+		@saved_data = [@missed.join(""), @chances, @board.join(""), @secret.join("")]
+		File.open("save.txt", "w") do |f|
+			@saved_data.each_index do |i|
+				f.puts @saved_data[i]
+			end
+		end
+	end
 
+	def load
+		@load_data = File.open("save.txt").readlines
+		@missed = @load_data[0].split("")
+		@chances = @load_data[1].to_i
+		@board = @load_data[2].split("")
+		@secret = @load_data[3].split("")
+	end
 
 	def play
 		select
 		new_board
 		@missed = []
 		@chances = 6
+		puts "load game? y or n"
+		load_game = gets.chomp
+		load if load_game == "y"
 		while (@win_condition == false) && (@chances > 0)
 			show
-			puts "Please select a letter"
+			puts "Please select a letter or select 0 to save"
 			@guess = gets.chomp.downcase
-			check
+			@array = ("a".."z").to_a
+			@array << "0"
+			if @guess.length != 1 || !@array.include?(@guess) || @missed.include?(@guess) || @board.include?(@guess)
+				puts "Invalid. Try again"
+				redo
+			end
+			if @guess == "0"
+				save
+				break
+			else
+				check
+			end
 		end
 		show
-		if @win_condition == true
-			puts "Winner!"
-		else
-			puts "You lose."
-		end
+		puts @win_condition ? "Winner!" : "You lose."
 	end
-
-
-
-
-
-
-attr_reader :dictionary, :secret, :board
-
-
-
-
-
 end
 
 a = Hangman.new
